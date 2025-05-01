@@ -5,6 +5,7 @@ const { getUserByPhone, registerUser } = require("../services/userService");
 // Import the Attenix login process for punch-in/out
 // const { initiateProcess } = require("../attenixClient/login.js");
 
+// Command constants
 const COMMANDS = {
   HI: "hi",
   BYE: "bye",
@@ -13,6 +14,65 @@ const COMMANDS = {
   PING: "!ping"
 };
 
+// Command handlers mapping
+const COMMAND_HANDLERS = {
+  // Authenticated command handlers
+  [COMMANDS.HI]: {
+    requiresAuth: true,
+    handler: async (client, message, user) => {
+      await client.sendMessage(message.from, "Hello! How can I help you today?");
+      // TODO: Implement punch-in functionality with user credentials
+      // Example: await initiateProcess(user.attenixUsername, user.attenixPassword, 'in');
+    }
+  },
+  [COMMANDS.BYE]: {
+    requiresAuth: true,
+    handler: async (client, message, user) => {
+      await client.sendMessage(message.from, "Goodbye! Have a great day!");
+      // TODO: Implement punch-out functionality with user credentials
+      // Example: await initiateProcess(user.attenixUsername, user.attenixPassword, 'out');
+    }
+  },
+  [COMMANDS.POLL]: {
+    requiresAuth: true,
+    handler: async (client, message, user) => {
+      try {
+        // Using the client WhatsApp instance for poll handling
+        // In a real application, assignments would be fetched from a service
+        const assignments = ["Assignment 1", "Assignment 2", "Assignment 3"]; // Example assignments
+        const chosenAssignment = await handleAssignments(client.client, message.from, assignments);
+        console.log(`User ${user.username || message.from} selected: ${chosenAssignment?.selectedOption || 'None'}`);
+        
+        // Handle the chosen assignment (e.g. log time, save to database, etc.)
+        if (chosenAssignment?.selectedOption) {
+          await client.sendMessage(message.from, `You've selected: ${chosenAssignment.selectedOption}. Your time will be logged.`);
+        }
+      } catch (error) {
+        console.error("Error handling poll:", error);
+        await client.sendMessage(message.from, "Sorry, I couldn't create the poll. Please try again later.");
+      }
+    }
+  },
+  
+  // Commands that work for all users (authenticated or not)
+  [COMMANDS.PING]: {
+    requiresAuth: false,
+    handler: async (client, message) => {
+      console.log(`Ping received from ${message.from}!`);
+      await client.sendMessage(message.from, "Pong!");
+    }
+  },
+  
+  // Special signup command handler
+  [COMMANDS.SIGNUP]: {
+    requiresAuth: false,
+    handler: async (client, message) => {
+      await client.sendMessage(message.from, "To sign up, please provide your details in this format: SIGNUP:Name:Email");
+    }
+  }
+};
+
+// Help messages
 const HELP_MESSAGES = {
   VERIFIED: `
 Available commands for verified users:
@@ -31,7 +91,6 @@ Available commands:
 Please sign up to access more features.
 `
 };
-
 
 class WhatsAppClient {
   constructor() {
@@ -53,7 +112,7 @@ class WhatsAppClient {
   setupClientListeners() {
     this.client.on("qr", this.handleQR);
     this.client.on("ready", this.handleReady);
-    this.client.on("message_create", this.handleMessage);
+    this.client.on("message_create", this.handleMessage.bind(this));
   }
 
   handleQR(qr) {
@@ -65,95 +124,89 @@ class WhatsAppClient {
     console.log("Client is ready!");
   }
 
+  /**
+   * Main entry point for handling all incoming messages
+   */
   async handleMessage(message) {
-    const messageBody = message.body.trim().toLowerCase();
+    try {
+      const messageBody = message.body.trim().toLowerCase();
 
-    if (messageBody.startsWith("signup:")) {
-      await this.handleSignup(message);
-    } else if (Object.values(COMMANDS).includes(messageBody)) {
-      await this.authWrapper(this.handleVerifiedUserMessage, message);
-    } else {
+      // Handle signup format messages
+      if (messageBody.startsWith("signup:")) {
+        await this.handleSignupMessage(message);
+        return;
+      }
+
+      // Handle commands
+      const commandHandler = this.getCommandHandler(messageBody);
+      if (commandHandler) {
+        await this.executeCommandHandler(commandHandler, message);
+        return;
+      }
+
+      // If we reach here, message wasn't recognized as a command
       await this.sendMessage(message.from, HELP_MESSAGES.UNVERIFIED);
+    } catch (error) {
+      console.error("Error handling message:", error);
+      await this.sendMessage(message.from, "Sorry, I encountered an error processing your request.");
     }
   }
 
-  async authWrapper(handler, message) {
+  /**
+   * Get the command handler for a given message
+   */
+  getCommandHandler(messageBody) {
+    return COMMAND_HANDLERS[messageBody];
+  }
+
+  /**
+   * Execute a command handler with appropriate authentication check
+   */
+  async executeCommandHandler(commandHandler, message) {
+    if (commandHandler.requiresAuth) {
+      await this.executeAuthenticatedCommand(commandHandler, message);
+    } else {
+      await commandHandler.handler(this, message);
+    }
+  }
+
+  /**
+   * Execute a command that requires authentication
+   */
+  async executeAuthenticatedCommand(commandHandler, message) {
     const phoneNumber = message.from.replace("@c.us", "");
     const user = await getUserByPhone(phoneNumber);
 
     if (user) {
-      return handler(message, user);
+      await commandHandler.handler(this, message, user);
     } else {
       await this.sendMessage(message.from, "You are not authorized to use this command. Please sign up first.");
-      return null;
     }
   }
 
-  async handleVerifiedUserMessage(message, user) {
-    const messageBody = message.body.trim().toLowerCase();
-
-    switch (messageBody) {
-      case COMMANDS.HI:
-        await this.sendMessage(message.from, "Hello! How can I help you today?");
-        // TODO: Implement punch-in functionality
-        // If user credentials are stored in database, you would do something like:
-        // 1. Get the user's Attenix credentials from database
-        // 2. Call initiateProcess with 'in' parameter
-        // Example: await initiateProcess(user.attenixUsername, user.attenixPassword, 'in');
-        break;
-      case COMMANDS.BYE:
-        await this.sendMessage(message.from, "Goodbye! Have a great day!");
-        // TODO: Implement punch-out functionality
-        // If user credentials are stored in database, you would do something like:
-        // 1. Get the user's Attenix credentials from database
-        // 2. Call initiateProcess with 'out' parameter
-        // Example: await initiateProcess(user.attenixUsername, user.attenixPassword, 'out');
-        break;
-      case COMMANDS.POLL:
-        await this.handlePoll(message);
-        break;
-      case COMMANDS.PING:
-        await this.handlePing(message);
-        break;
-      default:
-        await this.sendMessage(message.from, HELP_MESSAGES.VERIFIED);
+  /**
+   * Handle signup message with format "signup:Name:Email"
+   */
+  async handleSignupMessage(message) {
+    try {
+      const parts = message.body.split(":");
+      if (parts.length >= 3) {
+        const name = parts[1];
+        const email = parts[2];
+        await registerUser(name, email, message.from);
+        await this.sendMessage(message.from, `Thank you for signing up, ${name}!`);
+      } else {
+        await this.sendMessage(message.from, "Invalid signup format. Please use: signup:Your Name:your.email@example.com");
+      }
+    } catch (error) {
+      console.error("Error during signup:", error);
+      await this.sendMessage(message.from, "An error occurred during signup. Please try again.");
     }
   }
 
-  async handleUnverifiedUserMessage(message, messageBody) {
-    switch (messageBody) {
-      case COMMANDS.SIGNUP:
-        await this.sendMessage(message.from, "To sign up, please provide your details in this format: SIGNUP:Name:Email");
-        break;
-      case COMMANDS.PING:
-        await this.handlePing(message);
-        break;
-      default:
-        if (messageBody.startsWith("signup:")) {
-          await this.handleSignup(message);
-        } else {
-          await this.sendMessage(message.from, HELP_MESSAGES.UNVERIFIED);
-        }
-    }
-  }
-
-  async handlePoll(message) {
-    const client = getClient();
-    const chosenAssignment = await handleAssignments(client, message.from, assignments);
-    // Handle the chosen assignment
-  }
-
-  async handlePing(message) {
-    console.log(`Ping received from ${message.from}!`);
-    await this.sendMessage(message.from, "Pong!");
-  }
-
-  async handleSignup(message) {
-    const [_, name, email] = message.body.split(":");
-    await registerUser(name, email, message.from);
-    await this.sendMessage(message.from, `Thank you for signing up, ${name}!`);
-  }
-
+  /**
+   * Send a message to a recipient
+   */
   async sendMessage(to, content) {
     if (!this.client.pupPage) {
       throw new Error('Client not initialized');
