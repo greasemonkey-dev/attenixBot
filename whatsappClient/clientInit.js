@@ -2,6 +2,9 @@ const { Client } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
 const { handleAssignments } = require("./assignmentHandling.js");
 const { getUserByPhone, registerUser } = require("../services/userService");
+// Import the Attenix login process for punch-in/out
+// const { initiateProcess } = require("../attenixClient/login.js");
+
 const COMMANDS = {
   HI: "hi",
   BYE: "bye",
@@ -86,60 +89,59 @@ class WhatsAppClient {
     }
   }
 
+  async handleVerifiedUserMessage(message, user) {
+    const messageBody = message.body.trim().toLowerCase();
 
-async  handleMessage(message) {
-  const messageBody = message.body.trim().toLowerCase();
-
-  if (messageBody.startsWith("signup:")) {
-    await handleSignup(message);
-  } else if (Object.values(COMMANDS).includes(messageBody)) {
-    await authWrapper(handleVerifiedUserMessage, message);
-  } else {
-    await sendMessage(message.from, HELP_MESSAGES.UNVERIFIED);
+    switch (messageBody) {
+      case COMMANDS.HI:
+        await this.sendMessage(message.from, "Hello! How can I help you today?");
+        // TODO: Implement punch-in functionality
+        // If user credentials are stored in database, you would do something like:
+        // 1. Get the user's Attenix credentials from database
+        // 2. Call initiateProcess with 'in' parameter
+        // Example: await initiateProcess(user.attenixUsername, user.attenixPassword, 'in');
+        break;
+      case COMMANDS.BYE:
+        await this.sendMessage(message.from, "Goodbye! Have a great day!");
+        // TODO: Implement punch-out functionality
+        // If user credentials are stored in database, you would do something like:
+        // 1. Get the user's Attenix credentials from database
+        // 2. Call initiateProcess with 'out' parameter
+        // Example: await initiateProcess(user.attenixUsername, user.attenixPassword, 'out');
+        break;
+      case COMMANDS.POLL:
+        await this.handlePoll(message);
+        break;
+      case COMMANDS.PING:
+        await this.handlePing(message);
+        break;
+      default:
+        await this.sendMessage(message.from, HELP_MESSAGES.VERIFIED);
+    }
   }
-}
 
-async  handleVerifiedUserMessage(message, messageBody) {
-  switch (messageBody) {
-    case COMMANDS.HI:
-      await this.sendMessage(message.from, "Hello! How can I help you today?");
-      break;
-    case COMMANDS.BYE:
-      await this.sendMessage(message.from, "Goodbye! Have a great day!");
-      break;
-    case COMMANDS.POLL:
-      await handlePoll(message);
-      break;
-    case COMMANDS.PING:
-      await this.handlePing(message);
-      break;
-    default:
-      await this.sendMessage(message.from, HELP_MESSAGES.VERIFIED);
+  async handleUnverifiedUserMessage(message, messageBody) {
+    switch (messageBody) {
+      case COMMANDS.SIGNUP:
+        await this.sendMessage(message.from, "To sign up, please provide your details in this format: SIGNUP:Name:Email");
+        break;
+      case COMMANDS.PING:
+        await this.handlePing(message);
+        break;
+      default:
+        if (messageBody.startsWith("signup:")) {
+          await this.handleSignup(message);
+        } else {
+          await this.sendMessage(message.from, HELP_MESSAGES.UNVERIFIED);
+        }
+    }
   }
-}
 
-async  handleUnverifiedUserMessage(message, messageBody) {
-  switch (messageBody) {
-    case COMMANDS.SIGNUP:
-      await this.sendMessage(message.from, "To sign up, please provide your details in this format: SIGNUP:Name:Email");
-      break;
-    case COMMANDS.PING:
-      await handlePing(message);
-      break;
-    default:
-      if (messageBody.startsWith("signup:")) {
-        await handleSignup(message);
-      } else {
-        await this.sendMessage(message.from, HELP_MESSAGES.UNVERIFIED);
-      }
+  async handlePoll(message) {
+    const client = getClient();
+    const chosenAssignment = await handleAssignments(client, message.from, assignments);
+    // Handle the chosen assignment
   }
-}
-
-async  handlePoll(message) {
-  const client = getClient();
-  const chosenAssignment = await handleAssignments(client, message.from, assignments);
-  // Handle the chosen assignment
-}
 
   async handlePing(message) {
     console.log(`Ping received from ${message.from}!`);
