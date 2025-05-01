@@ -1,4 +1,4 @@
-# AttenixBot
+# 🤖 AttenixBot
 
 A WhatsApp bot application for Attenix services.
 
