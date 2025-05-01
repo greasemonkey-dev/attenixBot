@@ -39,4 +39,14 @@ coverage/
 
 # Temporary files
 .tmp/
-temp/ 
+temp/
+
+# Debug screenshots
+*.png
+debug-screenshot.png
+error-screenshot.png
+after-login.png
+login-page.png
+after-login-punchout.png
+after-punch-screenshot.png
+login-error.png 
