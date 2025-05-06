@@ -19,7 +19,7 @@ jest.spyOn(console, 'log').mockImplementation();
 jest.spyOn(console, 'error').mockImplementation();
 
 const nodemailer = require('nodemailer');
-const { sendVerificationEmail } = require('../sendEmail');
+const { sendVerificationEmail } = require('../../emailClient/sendEmail');
 
 describe('Email Client', () => {
   beforeEach(() => {

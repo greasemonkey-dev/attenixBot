@@ -2,9 +2,12 @@ const redis = require("redis-promisify");
 // ! TTL is not working
 
 const redisClient = redis.createClient({
-  host: "127.0.0.1", // Use the appropriate host, could be 'redis' if using Docker Compose service name
-  port: 6379, // Default Redis port
+  host: process.env.REDIS_HOST || "redis", // Use the appropriate host, could be 'redis' if using Docker Compose service name
+  port: process.env.REDIS_PORT || 6379, // Default Redis port
 });
+
+console.log(`Connecting to Redis at ${process.env.REDIS_HOST || "redis"}:${process.env.REDIS_PORT || 6379}...`);
+
 redisClient.on('connect', () => {
   console.log('Connected to Redis');
 });

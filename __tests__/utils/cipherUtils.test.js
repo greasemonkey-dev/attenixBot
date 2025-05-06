@@ -1,6 +1,6 @@
 console.log('🚀 Starting cipherUtils test setup');
 
-const { isValidEmail, randomNumber, hexEncode } = require('../cipherUtils');
+const { isValidEmail, randomNumber, hexEncode } = require('../../utils/cipherUtils');
 
 describe('Cipher Utilities', () => {
   describe('isValidEmail', () => {

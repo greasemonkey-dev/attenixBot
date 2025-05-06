@@ -1,7 +1,7 @@
 console.log('🚀 Starting Attenix login test setup');
 
 // Mock login module directly to prevent Playwright dependency issues
-jest.mock('../login', () => {
+jest.mock('../../attenixClient/login', () => {
   return {
     loginAndKeepSession: jest.fn().mockImplementation((username, password) => {
       console.log(`Mock login called with ${username}, ${password}`);
@@ -10,7 +10,7 @@ jest.mock('../login', () => {
   };
 });
 
-const { loginAndKeepSession } = require('../login');
+const { loginAndKeepSession } = require('../../attenixClient/login');
 
 describe('Attenix Login', () => {
   beforeEach(() => {

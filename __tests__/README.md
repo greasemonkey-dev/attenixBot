@@ -1,32 +1,57 @@
-# AttenixBot Test Suite
+# Testing Approach
 
-This directory contains test files for the AttenixBot application. The test suite uses Jest as the testing framework.
+This project uses Jest for testing with a centralized testing structure.
 
-## Test Structure
+## Directory Structure
 
-The tests are organized by service/module:
+All tests are organized in the central `__tests__` directory, with subdirectories mirroring the project structure:
 
-- `__tests__/services/`: Tests for service modules
-- `__tests__/redisClient/`: Tests for Redis client functionality
-- `__tests__/integration/`: Integration tests that verify interactions between components
+```
+__tests__/
+├── attenixClient/     # Tests for attenixClient module
+├── emailClient/       # Tests for emailClient module
+├── integration/       # Integration tests across multiple modules
+├── redisClient/       # Tests for redisClient module
+├── services/          # Tests for services module
+├── utils/             # Tests for utility functions
+└── whatsappClient/    # Tests for whatsappClient module
+```
+
+## Test File Naming
+
+Test files follow the naming convention:
+- `moduleName.test.js` for unit tests
+- `feature-integration.test.js` for integration tests
+
+## Import Paths
+
+Since tests are located in a centralized directory, imports in test files use relative paths from the test file to the module being tested:
+
+```javascript
+// Example: Importing a module from utils in a test
+const { someUtil } = require('../../utils/someUtil');
+```
 
 ## Running Tests
-
-You can run the tests using the following commands:
 
 ```bash
 # Run all tests
 npm test
 
+# Run tests for a specific module
+npm test -- --testPathPattern=redisClient
+
 # Run a specific test file
-npx jest path/to/test.js
-
-# Run tests for a specific service
-npx jest __tests__/services/
-
-# Run tests with coverage report
-npx jest --coverage
+npm test -- path/to/test/file.test.js
 ```
+
+## Best Practices
+
+1. Mock external dependencies
+2. Group tests logically with `describe` blocks
+3. Write meaningful test names with `it` or `test` functions
+4. Set up and tear down test state with `beforeEach` and `afterEach`
+5. Isolate tests to prevent interdependencies
 
 ## Test Coverage
 

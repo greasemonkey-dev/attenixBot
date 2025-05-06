@@ -41,7 +41,7 @@ describe('WhatsApp Client', () => {
         sendMessageMock = jest.fn().mockResolvedValue({});
         
         // Mock response method with direct implementation
-        jest.doMock('../clientInit', () => {
+        jest.doMock('../../whatsappClient/clientInit', () => {
             return {
                 sendMessage: sendMessageMock,
                 HELP_MESSAGES
@@ -54,25 +54,25 @@ describe('WhatsApp Client', () => {
     });
     
     it('should send Hello response to "hi"', async () => {
-        const { sendMessage } = require('../clientInit');
+        const { sendMessage } = require('../../whatsappClient/clientInit');
         await sendMessage('1234567890@c.us', "Hello! How can I help you today?");
         expect(sendMessageMock).toHaveBeenCalledWith('1234567890@c.us', "Hello! How can I help you today?");
     });
     
     it('should send Goodbye response to "bye"', async () => {
-        const { sendMessage } = require('../clientInit');
+        const { sendMessage } = require('../../whatsappClient/clientInit');
         await sendMessage('1234567890@c.us', "Goodbye! Have a great day!");
         expect(sendMessageMock).toHaveBeenCalledWith('1234567890@c.us', "Goodbye! Have a great day!");
     });
     
     it('should send Pong response to "!ping"', async () => {
-        const { sendMessage } = require('../clientInit');
+        const { sendMessage } = require('../../whatsappClient/clientInit');
         await sendMessage('1234567890@c.us', "Pong!");
         expect(sendMessageMock).toHaveBeenCalledWith('1234567890@c.us', "Pong!");
     });
     
     it('should send help messages to unknown commands', async () => {
-        const { sendMessage } = require('../clientInit');
+        const { sendMessage } = require('../../whatsappClient/clientInit');
         await sendMessage('1234567890@c.us', HELP_MESSAGES.VERIFIED);
         expect(sendMessageMock).toHaveBeenCalledWith('1234567890@c.us', HELP_MESSAGES.VERIFIED);
     });
