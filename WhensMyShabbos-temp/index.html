@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>When's My Shabbos?</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.maptiler.com/maptiler-sdk-js/v2.0.3/maptiler-sdk.umd.js"></script>
+    <link href="https://cdn.maptiler.com/maptiler-sdk-js/v2.0.3/maptiler-sdk.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>When's My Shabbos? 🕯️</h1>
+            <p class="subtitle">Find candle lighting times for your location</p>
+        </header>
+
+        <div id="info-panel" class="info-panel">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Detecting your location...</p>
+            </div>
+            <div id="shabbos-info" class="shabbos-info hidden">
+                <h2 id="location-name">Your Location</h2>
+                <div class="time-display">
+                    <div class="time-item">
+                        <span class="label">Candle Lighting:</span>
+                        <span id="candle-time" class="time">--:--</span>
+                    </div>
+                    <div class="time-item">
+                        <span class="label">Havdalah:</span>
+                        <span id="havdalah-time" class="time">--:--</span>
+                    </div>
+                    <div class="time-item">
+                        <span class="label">Parsha:</span>
+                        <span id="parsha" class="parsha">Loading...</span>
+                    </div>
+                    <div class="date-display">
+                        <span id="shabbos-date"></span>
+                    </div>
+                </div>
+            </div>
+            <div id="error-message" class="error-message hidden">
+                <p>Unable to detect location. Please enable location services.</p>
+            </div>
+        </div>
+
+        <div id="map"></div>
+
+        <div class="instructions">
+            <p>Click anywhere on the map to get Shabbos times for that location</p>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
